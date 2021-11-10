@@ -1,9 +1,11 @@
 package database;
 
+import java.util.ArrayList;
+
 public class User {
     private int id;
     private String name;
-    private String address;
+    private String ipAddress;
 
    // ipAddress = SocketConnection.getSocketConn().getSocket().getLocalAddress().getHostAddress();
 
@@ -21,12 +23,12 @@ public class User {
         this.id = id;
     }
 
-    public String getAddress() {
-        return address;
+    public String getIpAddress() {
+        return ipAddress;
     }
 
-    public void setAddress(String address) {
-        this.address = address;
+    public void setIpAddress(String ipAddress) {
+        this.ipAddress = ipAddress;
     }
 
     public String getName() {
