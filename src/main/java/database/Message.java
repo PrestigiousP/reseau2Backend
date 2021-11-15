@@ -7,11 +7,20 @@ public class Message {
     private String body;
     private int senderId;
     private ArrayList<Integer> receiverId;
+    private String senderName;
 
     public Message(String message, int senderId){
         this.body = message;
         this.senderId = senderId;
         this.receiverId = new ArrayList<>();
+    }
+
+    public String getSenderName() {
+        return senderName;
+    }
+
+    public void setSenderName(String senderName) {
+        this.senderName = senderName;
     }
 
     public int getId() {
@@ -38,7 +47,7 @@ public class Message {
         this.senderId = senderId;
     }
 
-    public ArrayList<Integer> getReceiverId() {
+    public ArrayList<Integer> getReceiversId() {
         return receiverId;
     }
 

@@ -27,6 +27,8 @@ public class ClientHandler implements Runnable {
         PrintWriter out = null;
         BufferedReader in = null;
         try {
+            // Ajoute le thread à la liste de threads
+            Server.connections.add(this);
 
             // get the outputstream of client
             out = new PrintWriter(
@@ -48,14 +50,18 @@ public class ClientHandler implements Runnable {
                 Request response = handleRequest(request, clientSocket);
                 // Le serveur peut renvoyer des réponses au client ici
                 if (response != null){
+                    if(response.getType() == Request.Type.CONN_COMPLETE){
+                        Server.clientThreadList.put(this, response.getClientId());
+                    }
                     String json = gson.toJson(response);
                     System.out.println("envoie de réponse au client: " + json);
                     out.println(json);
                 }
 
-
                 // out.println(line);
             }
+            Server.removeConnectedService(this);
+
         }
         catch (IOException e) {
             e.printStackTrace();
@@ -85,7 +91,10 @@ public class ClientHandler implements Runnable {
                     User userTest = userDaoImpl.getUser(request.getContent());
                     if(userTest != null){
                         System.out.println("Le user existe déjà");
-                        return new Request(Request.Type.CONN_COMPLETE, userTest.getId(), 0, userTest.getName());
+                        Request request1 = new Request(Request.Type.CONN_COMPLETE);
+                        request1.setClientId(userTest.getId());
+                        request1.setContent(userTest.getName());
+                        return request1;
                     }
 
                     // crée un objet user avec les infos de la request
@@ -111,8 +120,10 @@ public class ClientHandler implements Runnable {
                         userName = resultSet.getString("username");
                         id = Integer.parseInt(resultSet.getString("id"));
                     }
-
-                    return new Request(Request.Type.SEND_ID, id, 0, userName);
+                    Request request1 = new Request(Request.Type.SEND_ID);
+                    request1.setClientId(id);
+                    request1.setContent(userName);
+                    return request1;
                 }
                 case SEND_TO_CLIENT -> {
                     return null;
@@ -120,31 +131,76 @@ public class ClientHandler implements Runnable {
                 case GET_USERS -> {
                     UserDaoImpl userDao = new UserDaoImpl();
                     List<User> listUsers = userDao.getAllUsers();
-                    Request response = new Request(Request.Type.SEND_USERS, request.getClientId(), 0, "");
+                    Request response = new Request(Request.Type.SEND_USERS);
+                    response.setClientId(request.getClientId());
                     response.setListUsers((ArrayList<User>) listUsers);
                     return response;
                 }
                 case CREATE_CONV_PERSON -> {
                     UserConv userConv = new UserConv(request.getClientId());
-                    userConv.setSingleUser(request.getContent());
+                    request.getUsersNameList().forEach(userName -> {
+                        userConv.addSingleUser(userName);
+                    });
+
                     System.out.println("voici la liste id des users: " + request.getContent());
                     UserConvImpl userConvImpl = new UserConvImpl();
                     userConvImpl.createConv(userConv);
+                    ArrayList<UserConv> userConvs = new ArrayList<>();
+                    userConvs.add(userConv);
+                    Request response = new Request(Request.Type.CREATE_CONV_PERSON);
+                    response.setClientId(request.getClientId());
+                    response.getListUserConvId().add(userConv.getUser_id());
+                    request.setListUserConv(userConvs);
+                    Server.userConvCreation(response, socket);
                 }
                 case GET_CONV -> {
                     UserConvImpl user = new UserConvImpl();
                     ArrayList<UserConv> userconvList = user.getUserConv(request.getClientId());
-//                    for(UserConv userConv: listConv){
-//                        System.out.println("userconv here" +userConv.getListUsers().size());
-//                        userConv.getListUsers().forEach(u -> {
-//                            System.out.println("USER IN CONV: "+ u);
-//                        });
-//                    }
-                    Request response = new Request(Request.Type.GET_CONV, request.getClientId(), 0, "");
+                    Request response = new Request(Request.Type.GET_CONV);
+                    response.setClientId(request.getClientId());
                     response.setListUserConv(userconvList);
                     return response;
                 }
+                case GET_MESS -> {
+                    MessageImpl message = new MessageImpl();
+                    ArrayList<Message> messageList = message.getAllMessages(request);
+                    Request request1 = new Request(Request.Type.GET_MESS);
+                    request1.setListMessages(messageList);
+                    return request1;
+                }
+                case SEND_MESS -> {
+                    Message message = new Message(request.getContent(), request.getClientId());
+                    message.setReceiverId(request.getListUserConvId());
+                    MessageImpl messageImpl = new MessageImpl();
+                    messageImpl.insertMessage(message);
+
+                    // Renvoie le message à tous les personnes qui font partis de la conversation
+                    Request response = new Request(Request.Type.RECEIVE_MESS);
+                    response.setClientId(request.getClientId());
+                    response.setListUserConvId(request.getListUserConvId());
+                    String clientName = getClientName(request.getClientId());
+                    message.setSenderName(clientName);
+                    response.getListMessages().add(message);
+//                    response.setContent(request.getContent());
+                    Server.msgResponse(response, socket);
+                }
             }
+        }catch (SQLException e){
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public static String getClientName(int id){
+        try{
+            Statement statement = Database.getInstance().getConnection().createStatement();
+            ResultSet resultSet = statement.executeQuery(
+              "SELECT username FROM users WHERE id = "+id+""
+            );
+            resultSet.next();
+            String clientName = resultSet.getString("username");
+            System.out.println("nom de la personne qui envoit le message: " +clientName);
+            return clientName;
         }catch (SQLException e){
             e.printStackTrace();
         }
@@ -155,7 +211,7 @@ public class ClientHandler implements Runnable {
         try{
             Statement statement = Database.getInstance().getConnection().createStatement();
             ResultSet resultSet = statement.executeQuery(
-                    "SELECT * FROM users WHERE username = '"+userName+"';"
+                    "SELECT * FROM users WHERE username = '"+userName+"'"
             );
             System.out.println("get client id retourne: "+resultSet);
             return resultSet;
@@ -163,5 +219,9 @@ public class ClientHandler implements Runnable {
             e.printStackTrace();
         }
         return null;
+    }
+
+    public Socket getAcceptedSocket() {
+        return clientSocket;
     }
 }

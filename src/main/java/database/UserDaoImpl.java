@@ -27,6 +27,15 @@ public class UserDaoImpl implements UserDao<User> {
                     "INSERT INTO users (username, address) " +
                             "VALUES ('"+user.getName()+"', '"+user.getIpAddress()+"');"
             );
+            ResultSet resultSet = statement.executeQuery(
+                "SELECT id FROM users WHERE username='"+user.getName()+"'"
+            );
+            resultSet.next();
+            statement.executeUpdate(
+              "UPDATE user_conv " +
+                      "SET list_id = array_append(list_id, "+resultSet.getString("id")+"::smallint) " +
+                      "WHERE user_id = -1"
+            );
         }catch(SQLException e){
             e.printStackTrace();
         }

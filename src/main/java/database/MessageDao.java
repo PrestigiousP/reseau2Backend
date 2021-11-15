@@ -1,11 +1,10 @@
 package database;
 
-import java.util.List;
+import main.Request;
+
+import java.util.ArrayList;
 
 public interface MessageDao {
     void insertMessage(Message m);
-    List<Message> getAllMessages(int senderId);
-    // User getMessage(String username);
-//    void updateUser(User user);
-//    void deleteUser(User user);
+    ArrayList<Message> getAllMessages(Request request);
 }
