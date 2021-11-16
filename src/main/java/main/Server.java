@@ -54,26 +54,29 @@ public class Server {
         }
     }
 
-    public static void userConvCreation(Request response, Socket socket){
-        try{
-            PrintWriter out = new PrintWriter(
-                    socket.getOutputStream(), true);
-            for(Integer i: response.getListUserConvId()){
-                clientThreadList.forEach((clientHandler, integer) -> {
-                    if(i.equals(integer)){
-                        Gson gson = new Gson();
-                        // System.out.println("envoie une réponse à: "+ i);
-                        String json = gson.toJson(response);
-                        out.println(json);
+    public static void userConvCreation(Request response){
+        System.out.println("passe ici"+ response.getListUserConvId().size());
+        for(Integer i: response.getListUserConvId()){
+            System.out.println("voici le userConvId: "+i);
+            clientThreadList.forEach((clientHandler, integer) -> {
+                if(i.equals(integer)){
+                    PrintWriter out = null;
+                    try {
+                        out = new PrintWriter(
+                                clientHandler.getAcceptedSocket().getOutputStream(), true);
+                    } catch (IOException e) {
+                        e.printStackTrace();
                     }
-                });
-            }
-        }catch (IOException e){
-            e.printStackTrace();
+                    Gson gson = new Gson();
+                    // System.out.println("envoie une réponse à: "+ i);
+                    String json = gson.toJson(response);
+                    out.println(json);
+                }
+            });
         }
     }
 
-    public static void msgResponse(Request response, Socket socket){
+    public static void msgResponse(Request response){
             for(Integer i: response.getListUserConvId()){
                 clientThreadList.forEach((clientHandler, integer) -> {
                     System.out.println("valeur de i: "+ i);
@@ -97,13 +100,11 @@ public class Server {
 
     public static void broadCastMsg(long id, String usrMsg) throws IOException {
         for(ClientHandler client: connections){
-            // todo: checker
 
         }
     }
 
     public static void removeConnectedService(ClientHandler clientHandler) {
-        // todo : tester
         clientThreadList.forEach((clientThread, integer) -> {
             if(clientHandler == clientThread){
                 System.out.println("Le client est déconnecté: ");

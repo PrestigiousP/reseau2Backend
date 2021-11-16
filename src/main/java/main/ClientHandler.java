@@ -141,17 +141,25 @@ public class ClientHandler implements Runnable {
                     request.getUsersNameList().forEach(userName -> {
                         userConv.addSingleUser(userName);
                     });
-
-                    System.out.println("voici la liste id des users: " + request.getContent());
+                    // System.out.println("voici la liste id des users: " + request.getContent());
                     UserConvImpl userConvImpl = new UserConvImpl();
-                    userConvImpl.createConv(userConv);
+                    ArrayList<Integer> userConvIdList = userConvImpl.createConv(userConv);
+
+                    // Création d'une liste de conversation
+                    // (ne va contenir qu'une seule conversation)
                     ArrayList<UserConv> userConvs = new ArrayList<>();
                     userConvs.add(userConv);
+
+                    userConvIdList.forEach(userConvId -> {
+                        System.out.println("testttt "+ userConvId);
+                    });
+
                     Request response = new Request(Request.Type.CREATE_CONV_PERSON);
                     response.setClientId(request.getClientId());
-                    response.getListUserConvId().add(userConv.getUser_id());
-                    request.setListUserConv(userConvs);
-                    Server.userConvCreation(response, socket);
+                    response.setListUserConv(userConvs);
+                    response.setListUserConvId(userConvIdList);
+                    Server.userConvCreation(response);
+                    // return response;
                 }
                 case GET_CONV -> {
                     UserConvImpl user = new UserConvImpl();
@@ -182,7 +190,7 @@ public class ClientHandler implements Runnable {
                     message.setSenderName(clientName);
                     response.getListMessages().add(message);
 //                    response.setContent(request.getContent());
-                    Server.msgResponse(response, socket);
+                    Server.msgResponse(response);
                 }
             }
         }catch (SQLException e){

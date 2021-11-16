@@ -19,7 +19,7 @@ public class UserConvImpl implements UserConvDao{
     }
 
     @Override
-    public void createConv(UserConv userConv) {
+    public ArrayList<Integer> createConv(UserConv userConv) {
         try{
             ArrayList<Integer> listId = new ArrayList<>();
             for(int i = 0; i < userConv.getListUsers().size(); i ++){
@@ -33,23 +33,21 @@ public class UserConvImpl implements UserConvDao{
                 // listId.add(resultSet);
             }
             listId.add(userConv.getUser_id());
-
             StringBuilder stringBuilder = new StringBuilder();
             for(int i = 0; i < userConv.getListUsers().size(); i++){
                 stringBuilder.append(listId.get(i));
                 stringBuilder.append(",");
             }
             stringBuilder.append(userConv.getUser_id());
-
-            System.out.println("création conv, voici la listid: "+stringBuilder);
-
             statement.executeUpdate(
                     "INSERT INTO user_conv (user_id, list_id) " +
                             "VALUES ("+userConv.getUser_id()+", '{"+stringBuilder+"}')"
             );
+            return listId;
         }catch(SQLException e){
             e.printStackTrace();
         }
+        return null;
     }
 
     @Override
