@@ -12,9 +12,13 @@ public class Database {
 
     private Database(){
         try {
-            String url = "jdbc:postgresql://localhost:5432/reseau2tp2";
+//            String url = "jdbc:postgresql://localhost:5432/reseau2tp2";
+            String url = "jdbc:postgresql://ec2-54-159-244-207.compute-1.amazonaws.com/d6lf0db1slth8k?user=lqiciioarcpreh&password=4029c50bd8ae51d967b97e81f4f23e17433fde45471027056939362e921cf192";
 
-            // System.out.println("Got it!");
+            // SI VOUS AVEZ DES PROBLÈMES AVEC LA BASE DE DONNÉES LIRE ICI
+            // Il se pourrait que vous aillez à configurer votre base de données
+            // remplacer
+            // instance = DriverManager.getConnection(url, "postgres", "admin");
             instance = DriverManager.getConnection(url);
         } catch (SQLException e) {
             throw new Error("Problem", e);
